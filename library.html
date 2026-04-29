@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Library — BioAI</title>
+<meta name="description" content="A catalogue of model organisms, genes, and NCBI accessions. Browse, click, read.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #FFFFE3;
+  --paper-warm: #F5F0D6;
+  --ink: #0A0F14;
+  --ink-soft: #1C2632;
+  --ink-muted: #4A5560;
+  --ink-faint: #8294A2;
+  --rule: rgba(10,15,20,0.16);
+  --rule-soft: rgba(10,15,20,0.08);
+  --accent: #0E8FD4;
+  --accent-soft: #90D5FF;
+  --accent-warm: #C2451E;
+  --display: 'Instrument Serif', 'DM Serif Display', Georgia, serif;
+  --brand: 'DM Serif Display', Georgia, serif;
+  --mono: 'DM Mono', 'JetBrains Mono', Menlo, monospace;
+  --body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  font-family: var(--body);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.55;
+  cursor: none;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.06 0 0 0 0 0.08 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+/* Custom cursor */
+.cursor-ring { position: fixed; top: 0; left: 0; width: 28px; height: 28px; border: 1px solid var(--ink); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); mix-blend-mode: difference; filter: invert(1); transition: width 0.18s ease, height 0.18s ease; }
+.cursor-dot { position: fixed; top: 0; left: 0; width: 4px; height: 4px; background: var(--ink); border-radius: 50%; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); mix-blend-mode: difference; filter: invert(1); }
+.cursor-label { position: fixed; top: 0; left: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); padding: 3px 7px; border-radius: 999px; pointer-events: none; z-index: 9998; transform: translate(18px, 14px); opacity: 0; transition: opacity 0.16s ease; white-space: nowrap; }
+.cursor-label.visible { opacity: 1; }
+.cursor-ring.hover { width: 56px; height: 56px; }
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+  body { cursor: auto; }
+  .cursor-ring, .cursor-dot, .cursor-label { display: none !important; }
+}
+
+/* Header (same as landing) */
+.site-header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,227,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: border-color 0.3s ease, padding 0.3s ease; }
+.site-header.scrolled { border-bottom-color: var(--rule); padding: 12px 32px; }
+.brand { font-family: var(--brand); font-size: 24px; letter-spacing: -0.5px; text-decoration: none; color: var(--ink); display: flex; align-items: baseline; gap: 10px; }
+.brand .ai { font-style: italic; color: var(--accent); }
+.brand-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-faint); text-transform: uppercase; }
+.nav { display: flex; align-items: center; gap: 28px; }
+.nav a { font-family: var(--body); font-size: 13px; color: var(--ink); text-decoration: none; position: relative; padding: 4px 0; }
+.nav a.active { font-weight: 500; }
+.nav a.active::before { content: '/'; color: var(--accent); margin-right: 4px; }
+.nav a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: var(--ink); transition: width 0.3s ease; }
+.nav a:hover::after { width: 100%; }
+.nav a.cta { background: var(--ink); color: var(--paper); padding: 7px 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s ease; }
+.nav a.cta:hover { background: var(--accent); }
+.nav a.cta::after, .nav a.cta::before { display: none; }
+.nav a.cta svg { width: 11px; height: 11px; stroke: currentColor; }
+.menu-toggle { display: none; background: none; border: none; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--ink); cursor: none; text-transform: uppercase; }
+@media (max-width: 880px) {
+  .site-header { padding: 14px 18px; }
+  .nav { display: none; position: fixed; top: 64px; left: 0; right: 0; flex-direction: column; gap: 0; background: var(--paper); border-bottom: 1px solid var(--rule); padding: 20px; }
+  .nav.open { display: flex; }
+  .nav a { padding: 12px 0; border-bottom: 1px solid var(--rule-soft); width: 100%; }
+  .nav a.cta { margin-top: 10px; justify-content: center; }
+  .menu-toggle { display: block; }
+}
+
+/* ============================================================
+   LIBRARY MASTHEAD
+   ============================================================ */
+.masthead {
+  position: relative;
+  padding: 140px 32px 60px;
+  border-bottom: 1px solid var(--rule);
+  z-index: 2;
+}
+.mast-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 30px;
+}
+.mast-eyebrow .rule { width: 40px; height: 1px; background: var(--ink); }
+.mast-eyebrow .badge { display: inline-block; padding: 3px 9px; border: 1px solid var(--ink); border-radius: 2px; }
+
+.mast-title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(60px, 12vw, 200px);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  max-width: 1400px;
+}
+.mast-title .italic { font-style: italic; color: var(--accent); }
+
+.mast-foot {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 40px;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid var(--rule);
+  align-items: start;
+}
+.mast-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; line-height: 1.8; text-transform: uppercase; color: var(--ink-muted); }
+.mast-meta strong { color: var(--ink); display: block; font-weight: 500; }
+.mast-lede { font-family: var(--display); font-style: italic; font-size: clamp(18px, 1.9vw, 24px); line-height: 1.45; color: var(--ink-soft); }
+.mast-stats { display: flex; flex-direction: column; gap: 8px; }
+.mast-stat { display: flex; align-items: baseline; gap: 14px; font-family: var(--mono); font-size: 12px; }
+.mast-stat-num { font-family: var(--display); font-size: clamp(30px, 3.5vw, 44px); color: var(--ink); line-height: 1; min-width: 70px; }
+.mast-stat-label { color: var(--ink-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+@media (max-width: 880px) {
+  .masthead { padding: 110px 18px 40px; }
+  .mast-foot { grid-template-columns: 1fr; gap: 24px; margin-top: 30px; }
+}
+
+/* ============================================================
+   FILTER BAR (sticky)
+   ============================================================ */
+.filter-bar {
+  position: sticky;
+  top: 60px;
+  z-index: 50;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  backdrop-filter: blur(8px);
+}
+.filter-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-right: 6px;
+}
+.filter-pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.fpill {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: none;
+  color: var(--ink-muted);
+  background: transparent;
+  transition: all 0.18s ease;
+}
+.fpill:hover { border-color: var(--ink); color: var(--ink); }
+.fpill.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.search-input-wrap {
+  position: relative;
+  width: 280px;
+}
+.search-input-wrap svg {
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 14px; height: 14px;
+  stroke: var(--ink-muted);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  padding: 8px 0 8px 22px;
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  cursor: none;
+}
+.search-input::placeholder { color: var(--ink-faint); }
+.search-input:focus { border-bottom-color: var(--accent); }
+
+@media (max-width: 880px) {
+  .filter-bar { padding: 12px 18px; top: 56px; }
+  .search-input-wrap { width: 100%; }
+}
+
+/* ============================================================
+   ENTRY (organism block)
+   ============================================================ */
+.entry {
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid var(--rule);
+  padding: 80px 32px;
+  scroll-margin-top: 130px;
+  transition: background 0.3s ease;
+}
+.entry.hidden { display: none; }
+
+.entry-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+.entry-tag-col {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  position: sticky;
+  top: 130px;
+}
+.entry-tag-col .num {
+  font-family: var(--display);
+  font-size: 42px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.entry-tag-col .num em { font-style: italic; color: var(--accent); }
+.entry-tag-col .label { display: block; margin-top: 4px; color: var(--ink-muted); }
+
+.entry-main { min-width: 0; }
+
+.entry-name {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: clamp(40px, 6vw, 80px);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+.entry-common {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 30px;
+}
+.entry-common .dot { color: var(--accent); margin: 0 10px; }
+
+.entry-desc {
+  font-family: var(--display);
+  font-size: clamp(18px, 1.7vw, 22px);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 720px;
+  margin-bottom: 36px;
+}
+.entry-desc em { font-style: italic; color: var(--accent); }
+
+.entry-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-bottom: 40px;
+}
+.estat {
+  background: var(--paper);
+  padding: 18px 16px;
+}
+.estat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+.estat-value {
+  font-family: var(--display);
+  font-size: clamp(20px, 2.2vw, 28px);
+  color: var(--ink);
+  line-height: 1.1;
+}
+.estat-value .unit { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-left: 4px; }
+
+@media (max-width: 880px) {
+  .entry { padding: 50px 18px; }
+  .entry-grid { grid-template-columns: 1fr; gap: 24px; }
+  .entry-tag-col { position: static; }
+  .entry-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Subsection headings inside entry */
+.sub-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 30px 0 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+.sub-head:first-of-type { padding-top: 0; border-top: none; }
+.sub-head .count {
+  font-family: var(--mono);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Gene chips */
+.genes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gene-card {
+  display: inline-flex;
+  flex-direction: column;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 10px 14px;
+  cursor: none;
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
+.gene-card:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+.gene-card:hover * { color: var(--paper); }
+.gene-card:hover .gene-name { color: var(--accent-soft); }
+.gene-name {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--accent);
+}
+.gene-meta {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* Accession rows */
+.accs { display: flex; flex-direction: column; gap: 0; }
+.acc-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 130px;
+  gap: 24px;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--rule);
+  align-items: center;
+  text-decoration: none;
+  color: var(--ink);
+  cursor: none;
+  transition: padding 0.2s ease;
+}
+.acc-row:hover { padding-left: 12px; background: var(--paper-warm); }
+.acc-row:last-child { border-bottom: none; }
+.acc-id {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.acc-label {
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--ink);
+}
+.acc-action {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.acc-row:hover .acc-action { color: var(--ink); }
+.acc-action svg { width: 12px; height: 12px; stroke: currentColor; transition: transform 0.2s ease; }
+.acc-row:hover .acc-action svg { transform: translate(3px, -3px); }
+
+@media (max-width: 880px) {
+  .acc-row { grid-template-columns: 130px 1fr; gap: 14px; }
+  .acc-action { display: none; }
+}
+
+/* Live preview drawer (when an accession is clicked) */
+.preview-drawer {
+  margin-top: 14px;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease;
+}
+.preview-drawer.open { max-height: 1200px; padding: 22px 24px; margin-top: 14px; }
+.preview-loading { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 0; }
+.preview-loading::after { content: '...'; animation: dots 1.4s infinite; }
+@keyframes dots { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+.pv-meta {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px 20px;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+.pv-meta dt { color: var(--ink-faint); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; }
+.pv-meta dd { color: var(--ink); }
+.pv-meta dd code, .pv-code {
+  font-family: var(--mono); font-size: 13px; color: var(--accent);
+  background: rgba(144,213,255,0.18); padding: 1px 6px; border-radius: 3px;
+}
+.pv-badge {
+  display: inline-block;
+  font-family: var(--mono); font-size: 10px;
+  font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--ink); color: var(--paper);
+  margin-left: 6px;
+}
+.pv-summary { font-family: var(--display); font-style: italic; font-size: 16px; line-height: 1.5; color: var(--ink-soft); margin: 8px 0 14px; }
+.pv-cds {
+  font-family: var(--body); font-size: 13.5px; color: var(--ink-muted);
+  padding: 6px 0; border-top: 1px dashed var(--rule);
+}
+.pv-cds:first-of-type { border-top: none; }
+.pv-cds b { color: var(--ink); font-weight: 500; }
+.pv-cds a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+.pv-cds a:hover { border-bottom-color: var(--accent); }
+
+.pv-seq {
+  font-family: var(--mono); font-size: 12px;
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 10px 12px;
+  margin-top: 12px;
+  word-break: break-all; line-height: 1.55;
+}
+.pv-seq .a { color: #16a34a; font-weight: 600; }
+.pv-seq .t { color: #dc2626; font-weight: 600; }
+.pv-seq .g { color: #1d4ed8; font-weight: 600; }
+.pv-seq .c { color: #b45309; font-weight: 600; }
+
+.pv-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  flex-wrap: wrap; gap: 10px;
+}
+.pv-link { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.pv-link:hover { color: var(--ink); }
+.pv-link svg { width: 11px; height: 11px; stroke: currentColor; }
+.pv-explain { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); padding: 6px 12px; border-radius: 999px; text-decoration: none; transition: all 0.2s ease; }
+.pv-explain:hover { background: var(--ink); color: var(--paper); }
+
+.pv-error { color: var(--accent-warm); font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; padding: 8px 0; }
+
+/* Connection banner */
+.connect-banner {
+  position: fixed;
+  bottom: 18px; right: 18px;
+  z-index: 200;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-muted);
+  display: flex; align-items: center; gap: 8px;
+  transition: opacity 0.4s ease;
+}
+.connect-banner.hidden { opacity: 0; pointer-events: none; }
+.connect-banner .blob { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: pulseBlob 2s infinite; }
+.connect-banner.offline .blob { background: #dc2626; animation: none; }
+@keyframes pulseBlob { 50% { opacity: 0.4; } }
+
+/* Footer */
+.site-footer { background: var(--ink); color: var(--paper); padding: 70px 32px 30px; position: relative; z-index: 2; }
+.footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 50px; padding-bottom: 50px; border-bottom: 1px solid rgba(255,255,227,0.12); }
+.footer-brand { font-family: var(--brand); font-size: 32px; letter-spacing: -0.5px; }
+.footer-brand .ai { font-style: italic; color: var(--accent-soft); }
+.footer-tag { font-family: var(--display); font-style: italic; font-size: 18px; margin-top: 12px; color: rgba(255,255,227,0.7); max-width: 320px; line-height: 1.4; }
+.footer-col h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,227,0.5); font-weight: 500; margin-bottom: 16px; }
+.footer-col a { display: block; color: var(--paper); text-decoration: none; font-size: 14px; padding: 4px 0; transition: color 0.2s ease; }
+.footer-col a:hover { color: var(--accent-soft); }
+.footer-bottom { margin-top: 30px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: rgba(255,255,227,0.5); flex-wrap: wrap; gap: 14px; }
+.footer-bottom .codon { display: flex; gap: 8px; align-items: center; }
+.footer-bottom .codon span { width: 4px; height: 4px; background: var(--accent-soft); border-radius: 50%; opacity: 0.6; }
+@media (max-width: 880px) {
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 30px; }
+  .site-footer { padding: 50px 18px 24px; }
+}
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+.empty-state {
+  text-align: center;
+  padding: 80px 32px;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 24px;
+  color: var(--ink-muted);
+  display: none;
+}
+.empty-state.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-label" id="cursorLabel">Read</div>
+
+<header class="site-header" id="siteHeader">
+  <a href="index.html" class="brand">
+    <span>Bio<span class="ai">AI</span></span>
+    <span class="brand-meta">Vol. I &middot; 2026</span>
+  </a>
+  <button class="menu-toggle" id="menuToggle">Menu</button>
+  <nav class="nav" id="nav">
+    <a href="index.html#features">Features</a>
+    <a href="index.html#about">About</a>
+    <a href="index.html#contact">Contact</a>
+    <a href="library.html" class="active">Library</a>
+    <a href="chat.html" class="cta" data-cursor="Open">
+      Open Chat
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+    </a>
+  </nav>
+</header>
+
+<!-- ============================================================
+     MASTHEAD
+     ============================================================ -->
+<section class="masthead">
+  <div class="mast-eyebrow">
+    <span class="rule"></span>
+    <span class="badge">No. 002</span>
+    <span>The library</span>
+  </div>
+
+  <h1 class="mast-title">
+    A <span class="italic">catalogue</span><br>of organisms.
+  </h1>
+
+  <div class="mast-foot">
+    <div class="mast-meta">
+      <strong>Cards on file</strong>
+      Five model species<br>
+      Fifty curated genes<br>
+      Fifteen accessions
+    </div>
+    <p class="mast-lede">
+      Every card here links to a live NCBI record. Click an accession and the data slides open right where you are &mdash; no new tab, no loading screen, just the record itself.
+    </p>
+    <div class="mast-stats">
+      <div class="mast-stat"><span class="mast-stat-num" id="msO">5</span><span class="mast-stat-label">Organisms</span></div>
+      <div class="mast-stat"><span class="mast-stat-num" id="msG">50</span><span class="mast-stat-label">Genes</span></div>
+      <div class="mast-stat"><span class="mast-stat-num" id="msA">15</span><span class="mast-stat-label">Accessions</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FILTER BAR
+     ============================================================ -->
+<div class="filter-bar">
+  <div class="filter-pills" id="filterPills">
+    <span class="filter-label">Filter</span>
+    <button class="fpill active" data-filter="all">All</button>
+    <button class="fpill" data-filter="drosophila">Drosophila</button>
+    <button class="fpill" data-filter="mouse">Mouse</button>
+    <button class="fpill" data-filter="agrobacterium">Agrobacterium</button>
+    <button class="fpill" data-filter="yeast">Yeast</button>
+    <button class="fpill" data-filter="xenopus">Xenopus</button>
+  </div>
+  <div class="search-input-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search a gene or accession...">
+  </div>
+</div>
+
+<!-- ============================================================
+     ENTRIES (organisms — populated from backend if reachable, else fallback)
+     ============================================================ -->
+<main id="entries"></main>
+<div class="empty-state" id="emptyState">No matches. Try clearing filters.</div>
+
+<!-- Connection banner -->
+<div class="connect-banner" id="connectBanner">
+  <span class="blob"></span>
+  <span id="connectText">Connecting...</span>
+</div>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="site-footer">
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand">Bio<span class="ai">AI</span></div>
+      <p class="footer-tag">A genomics workbench for the curious. Open data, open tools, open access.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Pages</h4>
+      <a href="index.html">Home</a>
+      <a href="library.html">Library</a>
+      <a href="chat.html">Chat</a>
+      <a href="index.html#about">About</a>
+    </div>
+    <div class="footer-col">
+      <h4>Organisms</h4>
+      <a href="#drosophila">Drosophila</a>
+      <a href="#mouse">Mouse</a>
+      <a href="#yeast">Yeast</a>
+      <a href="#xenopus">Xenopus</a>
+    </div>
+    <div class="footer-col">
+      <h4>Sources</h4>
+      <a href="https://www.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">NCBI</a>
+      <a href="https://www.ncbi.nlm.nih.gov/refseq/" target="_blank" rel="noopener">RefSeq</a>
+      <a href="https://eutils.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">E-utilities</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>BioAI &middot; 2026</span>
+    <div class="codon"><span></span><span></span><span></span></div>
+    <span>Read 5' to 3'</span>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const API = 'http://localhost:8000';
+
+// ============================================================
+// FALLBACK DATA (used if backend not running)
+// ============================================================
+const FALLBACK_ORGANISMS = [
+  {
+    key: "drosophila", scientific_name: "Drosophila melanogaster", common_name: "Fruit fly",
+    tax_id: "7227", genome_size_mb: 143.7, gc_percent: 42.0,
+    chromosomes: "4 (X, Y, 2, 3, 4)", gene_count: "~14,000",
+    description: "A small fly used in genetics for over a century. Classic model for development, behavior, and disease genes.",
+    key_genes: ["white", "Antp", "bcd", "wg", "hb", "ftz", "eve", "Ubx", "abd-A", "sevenless"],
+    popular_accessions: [
+      {acc: "NM_001275660", label: "white gene mRNA"},
+      {acc: "NM_079617", label: "Antennapedia mRNA"},
+      {acc: "NM_169973", label: "bicoid mRNA"}
+    ]
+  },
+  {
+    key: "mouse", scientific_name: "Mus musculus", common_name: "House mouse",
+    tax_id: "10090", genome_size_mb: 2730.0, gc_percent: 42.0,
+    chromosomes: "20 (19 + X/Y)", gene_count: "~22,000",
+    description: "The premier mammalian model for human disease, immunology, neuroscience, and development.",
+    key_genes: ["Trp53", "Brca1", "Sox2", "Oct4", "Nanog", "Myc", "Hoxa1", "Shh", "Pax6", "Apoe"],
+    popular_accessions: [
+      {acc: "NM_011640", label: "Trp53 mRNA"},
+      {acc: "NM_009741", label: "Bcl2 mRNA"},
+      {acc: "NM_013684", label: "Tbp mRNA"}
+    ]
+  },
+  {
+    key: "agrobacterium", scientific_name: "Agrobacterium tumefaciens", common_name: "Crown gall bacterium",
+    tax_id: "358", genome_size_mb: 5.67, gc_percent: 59.4,
+    chromosomes: "1 circular + 1 linear chromosome + plasmids (Ti, At)", gene_count: "~5,400",
+    description: "Plant pathogen and the workhorse of plant genetic engineering. The Ti plasmid transfers DNA into plant cells.",
+    key_genes: ["virA", "virB", "virD2", "virE2", "virG", "iaaM", "iaaH", "ipt", "tms1", "tms2"],
+    popular_accessions: [
+      {acc: "AE007869", label: "C58 chromosome"},
+      {acc: "AE007871", label: "Ti plasmid pTiC58"},
+      {acc: "X00493", label: "virD2 region"}
+    ]
+  },
+  {
+    key: "yeast", scientific_name: "Saccharomyces cerevisiae", common_name: "Baker's yeast",
+    tax_id: "4932", genome_size_mb: 12.1, gc_percent: 38.3,
+    chromosomes: "16", gene_count: "~6,000",
+    description: "First eukaryote with a fully sequenced genome. Foundation of cell-cycle, metabolism, and aging research.",
+    key_genes: ["GAL1", "GAL4", "ACT1", "TUB1", "CDC28", "RAD51", "TOR1", "SIR2", "URA3", "LEU2"],
+    popular_accessions: [
+      {acc: "NM_001178160", label: "GAL1 mRNA"},
+      {acc: "NM_001178208", label: "ACT1 mRNA"},
+      {acc: "NM_001183480", label: "CDC28 mRNA"}
+    ]
+  },
+  {
+    key: "xenopus", scientific_name: "Xenopus laevis", common_name: "African clawed frog",
+    tax_id: "8355", genome_size_mb: 3100.0, gc_percent: 40.5,
+    chromosomes: "36 (allotetraploid)", gene_count: "~45,000",
+    description: "Premier vertebrate embryology model. Large eggs that develop externally make it ideal for studying early development.",
+    key_genes: ["nodal", "goosecoid", "chordin", "noggin", "siamois", "Xbra", "Xnr1", "Vg1", "Mix.1", "Sox17"],
+    popular_accessions: [
+      {acc: "NM_001088134", label: "chordin mRNA"},
+      {acc: "NM_001087230", label: "noggin mRNA"},
+      {acc: "NM_001087380", label: "goosecoid mRNA"}
+    ]
+  }
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function colorDNA(seq) {
+  if (!seq) return '';
+  return String(seq).toUpperCase().split('').map(b => {
+    if (b === 'A') return '<span class="a">A</span>';
+    if (b === 'T') return '<span class="t">T</span>';
+    if (b === 'G') return '<span class="g">G</span>';
+    if (b === 'C') return '<span class="c">C</span>';
+    return escapeHtml(b);
+  }).join('');
+}
+
+// ============================================================
+// CUSTOM CURSOR (same as landing)
+// ============================================================
+(function() {
+  const ring = document.getElementById('cursorRing');
+  const dot = document.getElementById('cursorDot');
+  const label = document.getElementById('cursorLabel');
+  if (!ring) return;
+  let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my, dx = mx, dy = my;
+  document.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; });
+  document.addEventListener('mouseleave', () => { ring.style.opacity = '0'; dot.style.opacity = '0'; });
+  document.addEventListener('mouseenter', () => { ring.style.opacity = '1'; dot.style.opacity = '1'; });
+  function tick() {
+    rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+    dx += (mx - dx) * 0.45; dy += (my - dy) * 0.45;
+    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+    dot.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%)`;
+    label.style.transform = `translate(${mx}px, ${my}px) translate(20px, 16px)`;
+    requestAnimationFrame(tick);
+  }
+  tick();
+  const hov = 'a, button, .gene-card, .acc-row, .fpill, [data-cursor], input';
+  document.addEventListener('mouseover', (e) => {
+    const t = e.target.closest(hov);
+    if (t) {
+      ring.classList.add('hover');
+      const txt = t.getAttribute('data-cursor');
+      if (txt) { label.textContent = txt; label.classList.add('visible'); }
+      else label.classList.remove('visible');
+    }
+  });
+  document.addEventListener('mouseout', (e) => {
+    const t = e.target.closest(hov);
+    if (t) { ring.classList.remove('hover'); label.classList.remove('visible'); }
+  });
+})();
+
+// ============================================================
+// HEADER + MENU
+// ============================================================
+(function() {
+  const header = document.getElementById('siteHeader');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 30) header.classList.add('scrolled');
+    else header.classList.remove('scrolled');
+  }, { passive: true });
+})();
+(function() {
+  const t = document.getElementById('menuToggle');
+  const nav = document.getElementById('nav');
+  if (!t || !nav) return;
+  t.addEventListener('click', () => {
+    nav.classList.toggle('open');
+    t.textContent = nav.classList.contains('open') ? 'Close' : 'Menu';
+  });
+})();
+
+// ============================================================
+// CONNECTION CHECK
+// ============================================================
+let backendOnline = false;
+async function pingBackend() {
+  const banner = document.getElementById('connectBanner');
+  const txt = document.getElementById('connectText');
+  try {
+    const r = await fetch(`${API}/`);
+    if (r.ok) {
+      backendOnline = true;
+      banner.classList.remove('offline');
+      txt.textContent = 'Live data';
+      setTimeout(() => banner.classList.add('hidden'), 2500);
+      return true;
+    }
+  } catch (e) {}
+  backendOnline = false;
+  banner.classList.add('offline');
+  txt.textContent = 'Offline mode (cached)';
+  return false;
+}
+
+// ============================================================
+// RENDER ENTRIES
+// ============================================================
+function renderEntries(organisms) {
+  const root = document.getElementById('entries');
+  root.innerHTML = '';
+  organisms.forEach((o, idx) => {
+    const num = String(idx + 1).padStart(2, '0');
+    const entry = document.createElement('section');
+    entry.className = 'entry reveal';
+    entry.id = o.key;
+    entry.setAttribute('data-organism', o.key);
+    entry.innerHTML = `
+      <div class="entry-grid">
+        <aside class="entry-tag-col">
+          <div class="num">${num.slice(0,1)}<em>${num.slice(1)}</em></div>
+          <span>Card no. ${num}</span>
+          <span class="label">TaxID ${escapeHtml(o.tax_id)}</span>
+        </aside>
+        <div class="entry-main">
+          <h2 class="entry-name">${escapeHtml(o.scientific_name)}</h2>
+          <div class="entry-common">
+            ${escapeHtml(o.common_name)}
+            <span class="dot">&middot;</span>
+            ${o.gene_count} genes
+          </div>
+          <p class="entry-desc">${escapeHtml(o.description)}</p>
+
+          <div class="entry-stats">
+            <div class="estat">
+              <div class="estat-label">Genome size</div>
+              <div class="estat-value">${o.genome_size_mb}<span class="unit">Mb</span></div>
+            </div>
+            <div class="estat">
+              <div class="estat-label">GC content</div>
+              <div class="estat-value">${o.gc_percent}<span class="unit">%</span></div>
+            </div>
+            <div class="estat">
+              <div class="estat-label">Chromosomes</div>
+              <div class="estat-value" style="font-size:16px;line-height:1.3">${escapeHtml(o.chromosomes)}</div>
+            </div>
+            <div class="estat">
+              <div class="estat-label">TaxID</div>
+              <div class="estat-value">${escapeHtml(o.tax_id)}</div>
+            </div>
+          </div>
+
+          <div class="sub-head">
+            <span>Key genes</span>
+            <span class="count">${(o.key_genes || []).length}</span>
+          </div>
+          <div class="genes" data-organism="${o.key}">
+            ${(o.key_genes || []).map(g => `
+              <a href="chat.html" class="gene-card" data-cursor="Ask"
+                 onclick="event.preventDefault(); openInChat('Tell me about the ${escapeHtml(g)} gene in ${escapeHtml(o.scientific_name)}')">
+                <span class="gene-name">${escapeHtml(g)}</span>
+                <span class="gene-meta">${escapeHtml(o.key)}</span>
+              </a>
+            `).join('')}
+          </div>
+
+          <div class="sub-head">
+            <span>NCBI accessions</span>
+            <span class="count">${(o.popular_accessions || []).length}</span>
+          </div>
+          <div class="accs">
+            ${(o.popular_accessions || []).map(p => `
+              <a href="#" class="acc-row" data-cursor="Open" data-acc="${escapeHtml(p.acc)}" data-org="${o.key}">
+                <span class="acc-id">${escapeHtml(p.acc)}</span>
+                <span class="acc-label">${escapeHtml(p.label)}</span>
+                <span class="acc-action">
+                  Open
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                </span>
+              </a>
+              <div class="preview-drawer" data-drawer="${escapeHtml(p.acc)}"></div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    root.appendChild(entry);
+  });
+
+  // Reveal observer
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  $$('.reveal').forEach(el => obs.observe(el));
+
+  // Wire accession rows
+  $$('.acc-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      e.preventDefault();
+      const acc = row.getAttribute('data-acc');
+      const drawer = row.parentElement.querySelector(`[data-drawer="${acc}"]`);
+      toggleDrawer(row, drawer, acc);
+    });
+  });
+}
+
+// ============================================================
+// LOAD ACCESSION INTO DRAWER
+// ============================================================
+const loadedDrawers = new Set();
+
+async function toggleDrawer(row, drawer, acc) {
+  if (drawer.classList.contains('open')) {
+    drawer.classList.remove('open');
+    return;
+  }
+  drawer.classList.add('open');
+  if (loadedDrawers.has(acc)) return;
+  loadedDrawers.add(acc);
+  drawer.innerHTML = `<div class="preview-loading">Fetching record from NCBI</div>`;
+
+  if (!backendOnline) {
+    drawer.innerHTML = `
+      <div class="pv-error">Backend offline. Start <code>python main.py</code> to fetch this record live.</div>
+      <div class="pv-footer">
+        <a class="pv-link" href="https://www.ncbi.nlm.nih.gov/nuccore/${encodeURIComponent(acc)}" target="_blank" rel="noopener">
+          View on NCBI
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+        </a>
+        <a class="pv-explain" href="chat.html" data-cursor="Ask"
+           onclick="event.preventDefault(); openInChat('Fetch accession ${acc}')">Explain in chat</a>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API}/sequence/${encodeURIComponent(acc)}`);
+    if (!r.ok) {
+      const errBody = await r.json().catch(() => ({}));
+      drawer.innerHTML = `<div class="pv-error">Could not fetch: ${escapeHtml(errBody.detail || 'unknown error')}</div>`;
+      return;
+    }
+    const rec = await r.json();
+    drawer.innerHTML = renderRecord(rec);
+  } catch (err) {
+    drawer.innerHTML = `<div class="pv-error">Network error: ${escapeHtml(err.message || err)}</div>`;
+  }
+}
+
+function renderRecord(rec) {
+  if (rec.error) {
+    return `<div class="pv-error">${escapeHtml(rec.error)}</div>`;
+  }
+  const cdsHtml = (rec.cds_list || []).map(c => `
+    <div class="pv-cds">
+      <b>CDS:</b> ${escapeHtml(c.product || 'product unknown')}
+      ${c.protein_id ? ` &middot; <a href="https://www.ncbi.nlm.nih.gov/protein/${encodeURIComponent(c.protein_id)}" target="_blank" rel="noopener">${escapeHtml(c.protein_id)}</a>` : ''}
+      ${c.protein_length ? ` &middot; ${c.protein_length} aa` : ''}
+    </div>
+  `).join('');
+  return `
+    <dl class="pv-meta">
+      <dt>Accession</dt><dd><span class="pv-code">${escapeHtml(rec.accession || '')}</span>${rec.mol_type || rec.type ? `<span class="pv-badge">${escapeHtml(rec.mol_type || rec.type)}</span>` : ''}</dd>
+      ${rec.length ? `<dt>Length</dt><dd>${rec.length.toLocaleString()} ${rec.type === 'protein' ? 'aa' : 'bp'}</dd>` : ''}
+      ${rec.organism ? `<dt>Organism</dt><dd><i>${escapeHtml(rec.organism)}</i></dd>` : ''}
+      ${rec.exon_count ? `<dt>Exons</dt><dd>${rec.exon_count}</dd>` : ''}
+    </dl>
+    ${rec.definition ? `<div class="pv-summary">${escapeHtml(rec.definition)}</div>` : ''}
+    ${cdsHtml}
+    ${rec.sequence_preview ? `<div class="pv-seq">${rec.type === 'protein' ? escapeHtml(rec.sequence_preview) : colorDNA(rec.sequence_preview)}</div>` : ''}
+    <div class="pv-footer">
+      <a class="pv-link" href="${rec.ncbi_url || ('https://www.ncbi.nlm.nih.gov/nuccore/' + encodeURIComponent(rec.accession || ''))}" target="_blank" rel="noopener">
+        View on NCBI
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+      </a>
+      <a class="pv-explain" href="chat.html" data-cursor="Ask"
+         onclick="event.preventDefault(); openInChat('Explain accession ${escapeHtml(rec.accession || '')}')">Explain in chat</a>
+    </div>
+  `;
+}
+
+// ============================================================
+// OPEN IN CHAT
+// ============================================================
+function openInChat(query) {
+  try { sessionStorage.setItem('bioai_initial_query', query); } catch(e) {}
+  window.location.href = 'chat.html';
+}
+window.openInChat = openInChat;
+
+// ============================================================
+// FILTER + SEARCH
+// ============================================================
+let activeFilter = 'all';
+function applyFilters() {
+  const q = ($('#searchInput').value || '').trim().toLowerCase();
+  let visible = 0;
+  $$('.entry').forEach(entry => {
+    const org = entry.getAttribute('data-organism');
+    let show = (activeFilter === 'all' || activeFilter === org);
+    if (show && q) {
+      const text = entry.textContent.toLowerCase();
+      show = text.includes(q);
+    }
+    entry.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  $('#emptyState').classList.toggle('visible', visible === 0);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Filter pill wiring
+  $$('.fpill').forEach(p => {
+    p.addEventListener('click', () => {
+      $$('.fpill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      activeFilter = p.getAttribute('data-filter');
+      applyFilters();
+    });
+  });
+  $('#searchInput').addEventListener('input', applyFilters);
+
+  // Try backend; fall back to embedded data
+  await pingBackend();
+  let organisms = FALLBACK_ORGANISMS;
+  if (backendOnline) {
+    try {
+      const r = await fetch(`${API}/organisms`);
+      if (r.ok) {
+        const data = await r.json();
+        if (data.organisms && data.organisms.length) organisms = data.organisms;
+      }
+    } catch (e) {}
+  }
+  renderEntries(organisms);
+
+  // Stats counters
+  const totalGenes = organisms.reduce((s, o) => s + (o.key_genes || []).length, 0);
+  const totalAccs = organisms.reduce((s, o) => s + (o.popular_accessions || []).length, 0);
+  document.getElementById('msO').textContent = organisms.length;
+  document.getElementById('msG').textContent = totalGenes;
+  document.getElementById('msA').textContent = totalAccs;
+
+  // Deep link: if URL has #organism, scroll to it
+  if (location.hash) {
+    setTimeout(() => {
+      const el = document.querySelector(location.hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+  }
+});
+</script>
+</body>
+</html>
