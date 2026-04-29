@@ -56,7 +56,7 @@ BIOAI_DB_PATH
 
 5. Deploy.
 
-Vercel will use [api/index.py](api/index.py) as the serverless entrypoint and [vercel.json](vercel.json) for routing. The SQLite cache is redirected to a writable temp path on Vercel.
+Vercel serves [index.html](index.html) at the site root and uses [api/index.py](api/index.py) for API requests under `/api`. The SQLite cache is redirected to a writable temp path on Vercel.
 
 ## API Endpoints
 
