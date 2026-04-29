@@ -28,7 +28,13 @@ NCBI_TOOL = "BioAI"
 NCBI_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bioai_cache.db")
+if os.getenv("VERCEL"):
+    DB_PATH = os.getenv("BIOAI_DB_PATH", "/tmp/bioai_cache.db")
+else:
+    DB_PATH = os.getenv(
+        "BIOAI_DB_PATH",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "bioai_cache.db")
+    )
 
 # ============================================================================
 # ORGANISMS

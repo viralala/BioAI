@@ -39,6 +39,25 @@ python main.py
 
 The server will listen on `http://localhost:8000` by default.
 
+## Deploy On Vercel
+
+1. Push the repo to GitHub.
+2. In Vercel, import the repository as a new project.
+3. Keep the framework preset as Python if prompted.
+4. Add these environment variables in Vercel if needed:
+
+```text
+GEMINI_API_KEY
+GEMINI_MODEL
+NCBI_API_KEY
+NCBI_EMAIL
+BIOAI_DB_PATH
+```
+
+5. Deploy.
+
+Vercel will use [api/index.py](api/index.py) as the serverless entrypoint and [vercel.json](vercel.json) for routing. The SQLite cache is redirected to a writable temp path on Vercel.
+
 ## API Endpoints
 
 - `GET /` - service status and configuration
